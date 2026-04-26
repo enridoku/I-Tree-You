@@ -1,9 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { C, TAG_COLORS, ALL_TAGS } from './data.js';
 
 export default function UploadModal({ onClose }) {
   const [form, setForm] = useState({ name: '', location: '', desc: '', tags: [] });
   const [submitted, setSubmitted] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStart = useRef(null);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
+
+  const dismiss = () => {
+    setVisible(false);
+    setTimeout(onClose, 280);
+  };
 
   const toggleTag = (t) => setForm(f => ({
     ...f,
@@ -31,10 +44,11 @@ export default function UploadModal({ onClose }) {
 
   return (
     <div
-      onClick={onClose}
+      onClick={dismiss}
       style={{
         position: 'absolute', inset: 0,
-        background: 'oklch(0.10 0.01 100 / 0.45)',
+        background: visible ? 'oklch(0.10 0.01 100 / 0.45)' : 'oklch(0.10 0.01 100 / 0)',
+        transition: 'background 0.28s',
         zIndex: 100,
         display: 'flex',
         alignItems: 'flex-end',
@@ -50,22 +64,45 @@ export default function UploadModal({ onClose }) {
           borderRadius: '20px 20px 0 0',
           padding: '0 0 32px',
           maxHeight: '88%',
-          overflowY: 'auto',
+          overflowY: isDragging ? 'hidden' : 'auto',
           boxShadow: '0 -4px 30px oklch(0.15 0.01 100 / 0.18)',
-          animation: 'slideUp 0.28s cubic-bezier(0.32,0.72,0,1)',
+          transform: visible ? `translateY(${dragY}px)` : 'translateY(100%)',
+          transition: isDragging ? 'none' : 'transform 0.30s cubic-bezier(0.32,0.72,0,1)',
         }}
       >
-        {/* Handle */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 0' }}>
+        {/* Handle — drag target */}
+        <div
+          onPointerDown={(e) => {
+            dragStart.current = e.clientY;
+            setIsDragging(true);
+            e.currentTarget.setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            if (!isDragging) return;
+            setDragY(Math.max(0, e.clientY - dragStart.current));
+          }}
+          onPointerUp={() => {
+            setIsDragging(false);
+            if (dragY > 100) dismiss();
+            else setDragY(0);
+            dragStart.current = null;
+          }}
+          style={{
+            display: 'flex', justifyContent: 'center',
+            padding: '14px 0',
+            cursor: 'grab',
+            touchAction: 'none',
+          }}
+        >
           <div style={{ width: 36, height: 4, borderRadius: 99, background: C.border }} />
         </div>
 
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px 12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 20px 12px' }}>
           <h3 style={{ fontFamily: '"DM Serif Display", serif', fontSize: 20, fontWeight: 400, color: C.text }}>
             Share a tree
           </h3>
-          <button onClick={onClose} style={{
+          <button onClick={dismiss} style={{
             width: 30, height: 30, borderRadius: 99, border: 'none',
             background: C.bgSubtle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: C.textMid, fontSize: 16, fontFamily: 'inherit',
