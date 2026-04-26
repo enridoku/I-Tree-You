@@ -8,8 +8,15 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
   const [allDone, setAllDone] = useState(false);
   const [ctaVisible, setCtaVisible] = useState(false);
 
-  const vertStart = useRef(null);
+  // CTA drag-to-dismiss state
+  const [ctaDragY, setCtaDragY] = useState(0);
+  const [ctaIsDragging, setCtaIsDragging] = useState(false);
+  const ctaDraggingRef = useRef(false);
+  const ctaDragYRef = useRef(0);
+  const ctaDragStartRef = useRef(null);
 
+  // Swipe-up zone gesture
+  const vertStart = useRef(null);
   const onZoneDown = (e) => {
     vertStart.current = { y: e.clientY ?? e.touches?.[0]?.clientY };
   };
@@ -19,7 +26,17 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
     const dy = vertStart.current.y - endY;
     vertStart.current = null;
     if (dy > 30) setCtaVisible(true);
-    if (dy < -30) setCtaVisible(false);
+  };
+
+  const closeCta = () => {
+    setCtaVisible(false);
+    setCtaDragY(0);
+    ctaDragYRef.current = 0;
+  };
+
+  const dismissCtaWithSlide = () => {
+    setCtaDragY(300);
+    setTimeout(closeCta, 280);
   };
 
   const current = trees[idx];
@@ -62,7 +79,7 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
 
-      {/* Card area — no gesture listeners here */}
+      {/* Card area */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px 0' }}>
         {loved.size > 0 && (
           <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'flex-end' }}>
@@ -80,7 +97,7 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
         />
       </div>
 
-      {/* Swipe-up zone — gesture listener lives only here */}
+      {/* Swipe-up zone */}
       <div
         onPointerDown={onZoneDown}
         onPointerUp={onZoneUp}
@@ -99,13 +116,9 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
           transition: 'opacity 0.25s',
         }}
       >
-        {/* Upward chevrons + tree icon */}
         <svg width="36" height="28" viewBox="0 0 36 28" fill="none">
-          {/* top chevron, faintest */}
           <path d="M10 10l8-7 8 7" stroke={C.textLight} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.35"/>
-          {/* middle chevron */}
           <path d="M10 17l8-7 8 7" stroke={C.textLight} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.6"/>
-          {/* bottom chevron, most visible */}
           <path d="M10 24l8-7 8 7" stroke={C.textLight} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
         </svg>
         <span style={{ fontSize: 10, color: C.textLight, fontWeight: 500, letterSpacing: '0.04em' }}>
@@ -113,22 +126,63 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
         </span>
       </div>
 
-      {/* Upload CTA — slides up from bottom */}
+      {/* Backdrop — tap anywhere above CTA to close */}
+      {ctaVisible && (
+        <div
+          onClick={closeCta}
+          style={{ position: 'absolute', inset: 0, zIndex: 9 }}
+        />
+      )}
+
+      {/* Upload CTA */}
       <div style={{
         position: 'absolute',
         bottom: 0, left: 0, right: 0,
-        transform: ctaVisible ? 'translateY(0)' : 'translateY(100%)',
-        transition: 'transform 0.32s cubic-bezier(0.32,0.72,0,1)',
+        transform: ctaVisible ? `translateY(${ctaDragY}px)` : 'translateY(100%)',
+        transition: ctaIsDragging ? 'none' : 'transform 0.32s cubic-bezier(0.32,0.72,0,1)',
         background: C.surface,
         borderTop: `1px solid ${C.border}`,
         borderRadius: '20px 20px 0 0',
-        padding: '12px 20px 24px',
+        padding: '0 20px 24px',
         boxShadow: '0 -4px 24px oklch(0.15 0.01 100 / 0.12)',
         zIndex: 10,
       }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+        {/* Handle — drag target */}
+        <div
+          onPointerDown={(e) => {
+            ctaDragStartRef.current = e.clientY;
+            ctaDraggingRef.current = true;
+            setCtaIsDragging(true);
+            e.currentTarget.setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            if (!ctaDraggingRef.current) return;
+            const dy = Math.max(0, e.clientY - ctaDragStartRef.current);
+            ctaDragYRef.current = dy;
+            setCtaDragY(dy);
+          }}
+          onPointerUp={() => {
+            ctaDraggingRef.current = false;
+            setCtaIsDragging(false);
+            if (ctaDragYRef.current > 60) {
+              dismissCtaWithSlide();
+            } else {
+              setCtaDragY(0);
+              ctaDragYRef.current = 0;
+            }
+            ctaDragStartRef.current = null;
+          }}
+          style={{
+            display: 'flex', justifyContent: 'center',
+            padding: '14px 0',
+            cursor: 'grab',
+            touchAction: 'none',
+            userSelect: 'none',
+          }}
+        >
           <div style={{ width: 36, height: 4, borderRadius: 99, background: C.border }} />
         </div>
+
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div>
             <p style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 2 }}>Found a beautiful tree?</p>
@@ -151,8 +205,9 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
             }}
           >Upload photo</button>
         </div>
+
         <button
-          onClick={() => setCtaVisible(false)}
+          onClick={closeCta}
           style={{
             position: 'absolute', top: 16, right: 16,
             width: 26, height: 26, borderRadius: 99,
