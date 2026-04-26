@@ -1,21 +1,35 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { C, TAG_COLORS, ALL_TAGS } from './data.js';
-import { addNewTree } from './firestore.js';
+import { addNewTree, uploadTreePhoto } from './firestore.js';
 
 export default function UploadModal({ onClose, onTreeAdded }) {
   const [form, setForm] = useState({ name: '', location: '', desc: '', tags: [] });
+  const [photo, setPhoto] = useState(null);         // File object
+  const [photoPreview, setPhotoPreview] = useState(null); // object URL for preview
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Refs keep values current inside pointer handlers without stale-closure issues
   const draggingRef = useRef(false);
   const dragYRef = useRef(0);
   const dragStartRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  // Revoke the object URL when it changes or the component unmounts
+  useEffect(() => {
+    return () => { if (photoPreview) URL.revokeObjectURL(photoPreview); };
+  }, [photoPreview]);
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
 
   const dismissWithSlide = () => {
-    // Animate the sheet off-screen, then close
     setDragY(window.innerHeight);
     setTimeout(onClose, 300);
   };
@@ -29,11 +43,15 @@ export default function UploadModal({ onClose, onTreeAdded }) {
     if (!form.name.trim() || submitting) return;
     setSubmitting(true);
     try {
+      let photoUrl = null;
+      if (photo) photoUrl = await uploadTreePhoto(photo);
+
       await addNewTree({
         name: form.name.trim(),
         location: form.location.trim(),
         description: form.desc.trim(),
         tags: form.tags,
+        photoUrl,
         votes: 0,
         species: '',
         type: '',
@@ -42,10 +60,10 @@ export default function UploadModal({ onClose, onTreeAdded }) {
         facts: [],
         hue: 130, sat: 0.10, lit: 0.40,
         gallery: [
-          { litOffset: 0,    hueOffset: 0,  label: 'Main view' },
-          { litOffset: 0.08, hueOffset: 10, label: 'Bright day' },
-          { litOffset: -0.08,hueOffset: -5, label: 'Evening' },
-          { litOffset: 0.04, hueOffset: 20, label: 'Golden hour' },
+          { litOffset: 0,     hueOffset: 0,  label: 'Main view' },
+          { litOffset: 0.08,  hueOffset: 10, label: 'Bright day' },
+          { litOffset: -0.08, hueOffset: -5, label: 'Evening' },
+          { litOffset: 0.04,  hueOffset: 20, label: 'Golden hour' },
         ],
       });
       setSubmitted(true);
@@ -114,12 +132,8 @@ export default function UploadModal({ onClose, onTreeAdded }) {
           onPointerUp={() => {
             draggingRef.current = false;
             setIsDragging(false);
-            if (dragYRef.current > 100) {
-              dismissWithSlide();
-            } else {
-              setDragY(0);
-              dragYRef.current = 0;
-            }
+            if (dragYRef.current > 100) dismissWithSlide();
+            else { setDragY(0); dragYRef.current = 0; }
             dragStartRef.current = null;
           }}
           style={{
@@ -155,21 +169,59 @@ export default function UploadModal({ onClose, onTreeAdded }) {
           </div>
         ) : (
           <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div style={{
-              height: 120, borderRadius: 12,
-              background: C.bgSubtle,
-              border: `2px dashed ${C.border}`,
-              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-              gap: 6, cursor: 'pointer',
-              color: C.textLight,
-            }}>
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="3"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <path d="m21 15-5-5L5 21"/>
-              </svg>
-              <span style={{ fontSize: 13, fontWeight: 500 }}>Tap to add photo</span>
+
+            {/* Photo picker */}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                height: 160, borderRadius: 12,
+                overflow: 'hidden',
+                background: C.bgSubtle,
+                border: photoPreview ? 'none' : `2px dashed ${C.border}`,
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                gap: 6, cursor: 'pointer',
+                color: C.textLight,
+                position: 'relative',
+              }}
+            >
+              {photoPreview ? (
+                <>
+                  <img
+                    src={photoPreview}
+                    alt="preview"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+                  {/* Tap-to-change overlay */}
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    background: 'oklch(0 0 0 / 0.28)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <span style={{ color: '#fff', fontSize: 12, fontWeight: 600, letterSpacing: '0.04em' }}>
+                      TAP TO CHANGE
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="3"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <path d="m21 15-5-5L5 21"/>
+                  </svg>
+                  <span style={{ fontSize: 13, fontWeight: 500 }}>Tap to add photo</span>
+                </>
+              )}
             </div>
+
+            {/* Hidden file input — opens camera roll + camera on mobile */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              style={{ display: 'none' }}
+              onChange={handlePhotoChange}
+            />
 
             <div>
               <label style={{ fontSize: 12, fontWeight: 600, color: C.textMid, display: 'block', marginBottom: 5, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
