@@ -10,16 +10,16 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
 
   const vertStart = useRef(null);
 
-  const onVertDown = (e) => {
+  const onZoneDown = (e) => {
     vertStart.current = { y: e.clientY ?? e.touches?.[0]?.clientY };
   };
-  const onVertUp = (e) => {
+  const onZoneUp = (e) => {
     if (!vertStart.current) return;
     const endY = e.clientY ?? e.changedTouches?.[0]?.clientY;
     const dy = vertStart.current.y - endY;
     vertStart.current = null;
-    if (dy > 50) setCtaVisible(true);
-    if (dy < -50) setCtaVisible(false);
+    if (dy > 30) setCtaVisible(true);
+    if (dy < -30) setCtaVisible(false);
   };
 
   const current = trees[idx];
@@ -60,11 +60,9 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
   );
 
   return (
-    <div
-      onPointerDown={onVertDown}
-      onPointerUp={onVertUp}
-      style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}
-    >
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
+
+      {/* Card area — no gesture listeners here */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px 0' }}>
         {loved.size > 0 && (
           <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'flex-end' }}>
@@ -73,7 +71,6 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
             </p>
           </div>
         )}
-
         <TreeCard
           key={current.id}
           tree={current}
@@ -81,25 +78,42 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
           onSkip={advance}
           onTap={() => onShowDetail(current)}
         />
-
-        {/* Swipe-up hint */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 6,
-          padding: '12px 0 16px',
-          opacity: ctaVisible ? 0 : 0.45,
-          transition: 'opacity 0.3s',
-        }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.textLight} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 19V5M5 12l7-7 7 7"/>
-          </svg>
-          <span style={{ fontSize: 11, color: C.textLight, fontWeight: 500 }}>Swipe up to share a tree</span>
-        </div>
       </div>
 
-      {/* Upload CTA */}
+      {/* Swipe-up zone — gesture listener lives only here */}
+      <div
+        onPointerDown={onZoneDown}
+        onPointerUp={onZoneUp}
+        style={{
+          flexShrink: 0,
+          height: 64,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 4,
+          cursor: 'ns-resize',
+          userSelect: 'none',
+          touchAction: 'none',
+          opacity: ctaVisible ? 0.3 : 1,
+          transition: 'opacity 0.25s',
+        }}
+      >
+        {/* Upward chevrons + tree icon */}
+        <svg width="36" height="28" viewBox="0 0 36 28" fill="none">
+          {/* top chevron, faintest */}
+          <path d="M10 10l8-7 8 7" stroke={C.textLight} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.35"/>
+          {/* middle chevron */}
+          <path d="M10 17l8-7 8 7" stroke={C.textLight} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.6"/>
+          {/* bottom chevron, most visible */}
+          <path d="M10 24l8-7 8 7" stroke={C.textLight} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
+        </svg>
+        <span style={{ fontSize: 10, color: C.textLight, fontWeight: 500, letterSpacing: '0.04em' }}>
+          share a tree
+        </span>
+      </div>
+
+      {/* Upload CTA — slides up from bottom */}
       <div style={{
         position: 'absolute',
         bottom: 0, left: 0, right: 0,
