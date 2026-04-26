@@ -58,7 +58,7 @@ export default function App() {
               color: C.text,
               letterSpacing: '-0.01em',
             }}>
-              I Tree You 🌳
+              I-Tree-You 🌳
             </h1>
             <span style={{
               fontSize: 11,
