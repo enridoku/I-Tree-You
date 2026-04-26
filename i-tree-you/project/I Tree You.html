@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>I Tree You</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="ios-frame.jsx"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: oklch(0.13 0.02 140);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Tree image placeholders using SVG backgrounds */
+    .tree-card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useRef, useEffect, useCallback } = React;
+
+// ── Color tokens ──────────────────────────────────────────────
+const C = {
+  bg:        'oklch(0.98 0.005 100)',
+  bgSubtle:  'oklch(0.96 0.008 110)',
+  surface:   'oklch(1 0 0)',
+  border:    'oklch(0.90 0.008 110)',
+  text:      'oklch(0.18 0.015 100)',
+  textMid:   'oklch(0.45 0.012 100)',
+  textLight: 'oklch(0.65 0.010 100)',
+  green:     'oklch(0.48 0.14 150)',
+  greenLight:'oklch(0.94 0.06 150)',
+  greenMid:  'oklch(0.72 0.12 150)',
+  brown:     'oklch(0.50 0.09 65)',
+  brownLight:'oklch(0.94 0.04 80)',
+  skip:      'oklch(0.92 0.005 100)',
+  skipText:  'oklch(0.40 0.010 100)',
+  love:      'oklch(0.48 0.14 150)',
+  loveText:  'oklch(0.98 0.01 150)',
+  heartRed:  'oklch(0.60 0.19 25)',
+};
+
+// ── Mock tree data ────────────────────────────────────────────
+const TREES = [
+  {
+    id: 1,
+    name: 'Ancient Linden',
+    location: 'Unter den Linden, Mitte',
+    species: 'Tilia × europaea',
+    type: 'Deciduous broadleaf',
+    bloomMonth: 'June',
+    bloomNote: 'Tiny cream-white flowers blanket the crown — bees come from kilometres around.',
+    description: 'A magnificent 300-year-old linden tree whose canopy stretches nearly 20 meters wide. In June, the air around it fills with a sweet honey scent that stops passersby in their tracks.',
+    facts: [
+      { icon: '📏', label: 'Height', value: '~18 m' },
+      { icon: '🎂', label: 'Estimated age', value: '300 yrs' },
+      { icon: '🌡️', label: 'Best season', value: 'Summer' },
+      { icon: '🐝', label: 'Wildlife', value: 'Major bee corridor' },
+    ],
+    tags: ['Scenic', 'Architectural', 'Seasonal'],
+    votes: 512,
+    hue: 148, sat: 0.12, lit: 0.38,
+    gallery: [
+      { litOffset: 0, hueOffset: 0, label: 'Morning light' },
+      { litOffset: -0.06, hueOffset: 8, label: 'Summer bloom' },
+      { litOffset: -0.12, hueOffset: -15, label: 'Late evening' },
+      { litOffset: 0.08, hueOffset: 20, label: 'Autumn haze' },
+    ],
+  },
+  {
+    id: 2,
+    name: 'Twin Oaks of Treptow',
+    location: 'Treptower Park, Treptow',
+    species: 'Quercus robur',
+    type: 'Deciduous broadleaf',
+    bloomMonth: 'April',
+    bloomNote: 'Catkins dangle like golden tassels before the leaves emerge — a brief, underrated spectacle.',
+    description: 'Two enormous oaks that have grown together over centuries, their trunks merging at the base like old friends. They shelter a beloved bench where Berliners come to read.',
+    facts: [
+      { icon: '📏', label: 'Trunk girth', value: '4.2 m combined' },
+      { icon: '🎂', label: 'Estimated age', value: '~450 yrs' },
+      { icon: '🌡️', label: 'Best season', value: 'Autumn' },
+      { icon: '🦉', label: 'Wildlife', value: 'Nesting tawny owls' },
+    ],
+    tags: ['Peaceful', 'Scenic', 'Unique'],
+    votes: 342,
+    hue: 130, sat: 0.14, lit: 0.32,
+    gallery: [
+      { litOffset: 0, hueOffset: 0, label: 'Dawn mist' },
+      { litOffset: 0.06, hueOffset: 12, label: 'Spring catkins' },
+      { litOffset: -0.08, hueOffset: -8, label: 'Storm light' },
+      { litOffset: -0.04, hueOffset: 25, label: 'October gold' },
+    ],
+  },
+  {
+    id: 3,
+    name: 'Weeping Willow, Wannsee',
+    location: 'Großer Wannsee, Steglitz-Zehlendorf',
+    species: 'Salix babylonica',
+    type: 'Deciduous, riparian',
+    bloomMonth: 'March',
+    bloomNote: 'One of Berlin\'s earliest bloomers — soft yellow catkins appear while snow can still be on the ground.',
+    description: 'Its curtain of golden-green tendrils sweeps the still water of the lake. At dusk, the reflections make it look like the tree is twice its size.',
+    facts: [
+      { icon: '📏', label: 'Canopy spread', value: '~14 m wide' },
+      { icon: '🎂', label: 'Estimated age', value: '~120 yrs' },
+      { icon: '🌡️', label: 'Best season', value: 'Spring & dusk' },
+      { icon: '🦆', label: 'Wildlife', value: 'Heron nesting site' },
+    ],
+    tags: ['Photography', 'Scenic', 'Trail nearby'],
+    votes: 289,
+    hue: 100, sat: 0.11, lit: 0.36,
+    gallery: [
+      { litOffset: 0, hueOffset: 0, label: 'Lakeside view' },
+      { litOffset: 0.1, hueOffset: -10, label: 'Spring awakening' },
+      { litOffset: -0.1, hueOffset: 5, label: 'Golden hour' },
+      { litOffset: -0.15, hueOffset: -20, label: 'Moonlit reflection' },
+    ],
+  },
+  {
+    id: 4,
+    name: 'The Grunewald Giant',
+    location: 'Grunewald Forest, Charlottenburg-Wilmersdorf',
+    species: 'Pinus sylvestris',
+    type: 'Evergreen conifer',
+    bloomMonth: 'May',
+    bloomNote: 'Pollen season turns the air around it yellow-green — locals joke you can taste the forest.',
+    description: 'A solitary pine standing some 40 meters above the forest floor. Locals call it the "lighthouse" — you can spot its crown from the Teufelsberg hill.',
+    facts: [
+      { icon: '📏', label: 'Height', value: '~40 m' },
+      { icon: '🎂', label: 'Estimated age', value: '~200 yrs' },
+      { icon: '🌡️', label: 'Best season', value: 'Year-round' },
+      { icon: '🦅', label: 'Wildlife', value: 'Red kite viewpoint' },
+    ],
+    tags: ['Hiking', 'Trail nearby', 'Unique'],
+    votes: 198,
+    hue: 155, sat: 0.13, lit: 0.28,
+    gallery: [
+      { litOffset: 0, hueOffset: 0, label: 'Forest floor view' },
+      { litOffset: 0.08, hueOffset: -5, label: 'Misty morning' },
+      { litOffset: -0.05, hueOffset: 10, label: 'Midday crown' },
+      { litOffset: -0.12, hueOffset: -10, label: 'Winter silhouette' },
+    ],
+  },
+  {
+    id: 5,
+    name: 'Copper Beech, Prenzlauer Berg',
+    location: 'Kollwitzplatz, Prenzlauer Berg',
+    species: 'Fagus sylvatica "Purpurea"',
+    type: 'Deciduous broadleaf',
+    bloomMonth: 'October',
+    bloomNote: 'In autumn the burgundy deepens to near-black, backlit by low October sun — unmissable.',
+    description: 'Its deep burgundy leaves glow like stained glass when autumn sun passes through them. Children and artists alike gather beneath it on weekends.',
+    facts: [
+      { icon: '📏', label: 'Height', value: '~22 m' },
+      { icon: '🎂', label: 'Estimated age', value: '~80 yrs' },
+      { icon: '🌡️', label: 'Best season', value: 'Autumn' },
+      { icon: '🎨', label: 'Notable', value: 'Beloved by local painters' },
+    ],
+    tags: ['Urban', 'Seasonal', 'Photography'],
+    votes: 175,
+    hue: 25, sat: 0.10, lit: 0.38,
+    gallery: [
+      { litOffset: 0, hueOffset: 0, label: 'Summer burgundy' },
+      { litOffset: 0.05, hueOffset: 5, label: 'Spring unfurling' },
+      { litOffset: -0.06, hueOffset: 15, label: 'Backlit leaves' },
+      { litOffset: -0.1, hueOffset: -5, label: 'After rain' },
+    ],
+  },
+  {
+    id: 6,
+    name: 'Silver Birch Cluster',
+    location: 'Tempelhofer Feld, Tempelhof',
+    species: 'Betula pendula',
+    type: 'Deciduous, pioneer species',
+    bloomMonth: 'April',
+    bloomNote: 'Lime-green catkins flutter at the tips of every branch — the whole cluster seems to vibrate in April wind.',
+    description: 'A circle of slender birches that somehow took root on the old airfield. Their white bark catches every passing cloud and wind, always in motion.',
+    facts: [
+      { icon: '📏', label: 'Tallest trunk', value: '~16 m' },
+      { icon: '🎂', label: 'Estimated age', value: '~50 yrs' },
+      { icon: '🌡️', label: 'Best season', value: 'Winter (bark)' },
+      { icon: '✈️', label: 'History', value: 'Grew on old runway edge' },
+    ],
+    tags: ['Scenic', 'Peaceful', 'Urban'],
+    votes: 143,
+    hue: 85, sat: 0.07, lit: 0.55,
+    gallery: [
+      { litOffset: 0, hueOffset: 0, label: 'Open field view' },
+      { litOffset: 0.07, hueOffset: -8, label: 'White bark close-up' },
+      { litOffset: -0.08, hueOffset: 10, label: 'Autumn yellow' },
+      { litOffset: -0.14, hueOffset: -5, label: 'Bare winter grove' },
+    ],
+  },
+];
+
+const TAG_COLORS = {
+  'Scenic':       { bg: 'oklch(0.93 0.07 155)', text: 'oklch(0.35 0.12 150)' },
+  'Trail nearby': { bg: 'oklch(0.93 0.06 80)',  text: 'oklch(0.38 0.10 70)'  },
+  'Peaceful':     { bg: 'oklch(0.94 0.05 220)', text: 'oklch(0.38 0.10 220)' },
+  'Urban':        { bg: 'oklch(0.93 0.04 260)', text: 'oklch(0.38 0.09 260)' },
+  'Architectural':{ bg: 'oklch(0.93 0.06 40)',  text: 'oklch(0.38 0.10 38)'  },
+  'Unique':       { bg: 'oklch(0.93 0.07 320)', text: 'oklch(0.38 0.11 320)' },
+  'Seasonal':     { bg: 'oklch(0.93 0.07 60)',  text: 'oklch(0.38 0.11 58)'  },
+  'Photography':  { bg: 'oklch(0.93 0.05 200)', text: 'oklch(0.38 0.09 200)' },
+  'Hiking':       { bg: 'oklch(0.93 0.06 130)', text: 'oklch(0.35 0.11 130)' },
+};
+
+// ── Tree illustration (SVG placeholder) ──────────────────────
+function TreeIllustration({ hue = 140, sat = 0.12, lit = 0.35, id }) {
+  const darkTone  = `oklch(${(lit - 0.08).toFixed(2)} ${sat} ${hue})`;
+  const midTone   = `oklch(${lit.toFixed(2)} ${sat} ${hue})`;
+  const lightTone = `oklch(${(lit + 0.10).toFixed(2)} ${(sat - 0.03).toFixed(2)} ${hue})`;
+  const skyLit    = `oklch(${(lit + 0.48).toFixed(2)} ${(sat * 0.4).toFixed(2)} ${hue + 10})`;
+  const skyDark   = `oklch(${(lit + 0.38).toFixed(2)} ${(sat * 0.3).toFixed(2)} ${hue + 15})`;
+  const trunkCol  = `oklch(0.42 0.07 65)`;
+  const groundCol = `oklch(${(lit + 0.20).toFixed(2)} ${(sat * 0.5).toFixed(2)} ${hue - 5})`;
+
+  // use id to vary composition
+  const variant = id % 3;
+
+  return (
+    <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" style={{width:'100%',height:'100%',display:'block'}}>
+      <defs>
+        <linearGradient id={`sky-${id}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={skyDark} />
+          <stop offset="100%" stopColor={skyLit} />
+        </linearGradient>
+        <radialGradient id={`canopy-${id}`} cx="50%" cy="40%" r="55%">
+          <stop offset="0%" stopColor={lightTone} />
+          <stop offset="60%" stopColor={midTone} />
+          <stop offset="100%" stopColor={darkTone} />
+        </radialGradient>
+      </defs>
+      {/* Sky */}
+      <rect width="400" height="300" fill={`url(#sky-${id})`} />
+      {/* Ground */}
+      <ellipse cx="200" cy="285" rx="220" ry="30" fill={groundCol} opacity="0.5" />
+
+      {variant === 0 && <>
+        {/* Rounded oak-like */}
+        <rect x="185" y="195" width="30" height="80" rx="4" fill={trunkCol} />
+        <ellipse cx="200" cy="165" rx="90" ry="75" fill={`url(#canopy-${id})`} />
+        <ellipse cx="155" cy="185" rx="55" ry="45" fill={darkTone} opacity="0.5" />
+        <ellipse cx="245" cy="180" rx="50" ry="42" fill={darkTone} opacity="0.4" />
+        <ellipse cx="200" cy="130" rx="65" ry="55" fill={lightTone} opacity="0.35" />
+      </>}
+      {variant === 1 && <>
+        {/* Tall pine-like */}
+        <rect x="189" y="200" width="22" height="78" rx="3" fill={trunkCol} />
+        <polygon points="200,60 145,210 255,210" fill={midTone} />
+        <polygon points="200,90 138,220 262,220" fill={darkTone} opacity="0.4" />
+        <polygon points="200,80 152,190 248,190" fill={lightTone} opacity="0.5" />
+        <polygon points="200,50 158,170 242,170" fill={midTone} opacity="0.8" />
+        <polygon points="200,30 163,155 237,155" fill={lightTone} opacity="0.6" />
+      </>}
+      {variant === 2 && <>
+        {/* Weeping / spreading */}
+        <rect x="192" y="190" width="16" height="85" rx="3" fill={trunkCol} />
+        {/* branches draping */}
+        {[[-70,145,-90,240],[-40,130,-55,230],[0,120,0,235],[40,130,55,230],[70,145,90,240]].map(([bx,by,ex,ey],i) => (
+          <path key={i} d={`M200,190 Q${200+bx},${by} ${200+ex},${ey}`}
+            stroke={darkTone} strokeWidth="10" fill="none" opacity="0.7" strokeLinecap="round" />
+        ))}
+        <ellipse cx="200" cy="155" rx="100" ry="55" fill={`url(#canopy-${id})`} opacity="0.9" />
+        <ellipse cx="200" cy="145" rx="65" ry="38" fill={lightTone} opacity="0.4" />
+      </>}
+
+      {/* Subtle vignette */}
+      <rect width="400" height="300" fill="oklch(0 0 0 / 0.08)" style={{mixBlendMode:'multiply'}} />
+      {/* Location watermark strip at bottom */}
+    </svg>
+  );
+}
+
+// ── Tag pill ──────────────────────────────────────────────────
+function Tag({ label }) {
+  const colors = TAG_COLORS[label] || { bg: C.greenLight, text: C.green };
+  return (
+    <span style={{
+      display: 'inline-block',
+      padding: '3px 10px',
+      borderRadius: 99,
+      fontSize: 11,
+      fontWeight: 600,
+      letterSpacing: '0.02em',
+      background: colors.bg,
+      color: colors.text,
+    }}>{label}</span>
+  );
+}
+
+// ── Tree detail overlay ───────────────────────────────────────
+function TreeDetail({ tree, onClose }) {
+  const [galleryIdx, setGalleryIdx] = useState(0);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    requestAnimationFrame(() => setVisible(true));
+  }, []);
+
+  const close = () => {
+    setVisible(false);
+    setTimeout(onClose, 280);
+  };
+
+  const gallery = tree.gallery || [{ litOffset: 0, hueOffset: 0, label: 'Main view' }];
+  const active = gallery[galleryIdx];
+  const adjLit = Math.max(0.1, Math.min(0.9, tree.lit + (active.litOffset || 0)));
+  const adjHue = tree.hue + (active.hueOffset || 0);
+
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const bloomIdx = MONTHS.findIndex(m => tree.bloomMonth && tree.bloomMonth.startsWith(m));
+
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, zIndex: 200,
+      background: visible ? 'oklch(0.10 0.01 100 / 0.5)' : 'oklch(0.10 0.01 100 / 0)',
+      transition: 'background 0.28s',
+      display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+    }} onClick={close}>
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: C.bg,
+          borderRadius: '22px 22px 0 0',
+          height: '92%',
+          display: 'flex', flexDirection: 'column',
+          overflow: 'hidden',
+          transform: visible ? 'translateY(0)' : 'translateY(100%)',
+          transition: 'transform 0.30s cubic-bezier(0.32,0.72,0,1)',
+          boxShadow: '0 -8px 40px oklch(0.10 0.01 100 / 0.18)',
+        }}
+      >
+        {/* Gallery hero */}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          {/* Main image */}
+          <div style={{ width: '100%', height: 240, background: C.bgSubtle, overflow: 'hidden' }}>
+            <TreeIllustration hue={adjHue} sat={tree.sat} lit={adjLit} id={tree.id + galleryIdx * 10} />
+          </div>
+
+          {/* Overlay gradient */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: 80,
+            background: 'linear-gradient(to top, oklch(0.12 0.01 100 / 0.55), transparent)',
+          }} />
+
+          {/* Back button */}
+          <button onClick={close} style={{
+            position: 'absolute', top: 14, left: 14,
+            width: 34, height: 34, borderRadius: 99,
+            border: 'none', background: 'oklch(0.10 0.01 100 / 0.45)',
+            backdropFilter: 'blur(8px)',
+            color: '#fff', fontSize: 18, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'inherit',
+          }}>‹</button>
+
+          {/* Votes badge */}
+          <div style={{
+            position: 'absolute', top: 14, right: 14,
+            background: 'oklch(0.10 0.01 100 / 0.45)',
+            backdropFilter: 'blur(8px)',
+            color: '#fff', borderRadius: 99,
+            padding: '4px 11px', fontSize: 12, fontWeight: 700,
+          }}>{tree.votes} 💚</div>
+
+          {/* Gallery label */}
+          <div style={{
+            position: 'absolute', bottom: 10, left: 14,
+            color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: 600,
+            letterSpacing: '0.04em', textTransform: 'uppercase',
+          }}>{active.label}</div>
+        </div>
+
+        {/* Thumbnail strip */}
+        <div style={{
+          display: 'flex', gap: 6, padding: '10px 14px',
+          background: C.surface,
+          borderBottom: `1px solid ${C.border}`,
+          flexShrink: 0,
+        }}>
+          {gallery.map((g, i) => {
+            const tLit = Math.max(0.1, Math.min(0.9, tree.lit + (g.litOffset || 0)));
+            const tHue = tree.hue + (g.hueOffset || 0);
+            return (
+              <button
+                key={i}
+                onClick={() => setGalleryIdx(i)}
+                style={{
+                  width: 56, height: 42, borderRadius: 8, overflow: 'hidden',
+                  border: i === galleryIdx ? `2px solid ${C.green}` : `2px solid transparent`,
+                  padding: 0, cursor: 'pointer', flexShrink: 0,
+                  transition: 'border-color 0.15s',
+                  background: 'none',
+                }}
+              >
+                <TreeIllustration hue={tHue} sat={tree.sat} lit={tLit} id={tree.id + i * 10} />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Scrollable info */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 18px 32px' }}>
+          {/* Name + species */}
+          <h2 style={{
+            fontFamily: '"DM Serif Display", serif',
+            fontSize: 26, fontWeight: 400, color: C.text,
+            lineHeight: 1.15, marginBottom: 4,
+          }}>{tree.name}</h2>
+          <p style={{ fontSize: 12, color: C.textLight, fontStyle: 'italic', marginBottom: 10 }}>
+            {tree.species} · {tree.type}
+          </p>
+
+          {/* Location */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 16 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.textMid} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+              <circle cx="12" cy="9" r="2.5"/>
+            </svg>
+            <span style={{ fontSize: 13, color: C.textMid }}>{tree.location}</span>
+          </div>
+
+          {/* Fact pills */}
+          <div style={{
+            display: 'grid', gridTemplateColumns: '1fr 1fr',
+            gap: 8, marginBottom: 18,
+          }}>
+            {(tree.facts || []).map((f, i) => (
+              <div key={i} style={{
+                background: C.surface,
+                border: `1px solid ${C.border}`,
+                borderRadius: 12, padding: '10px 12px',
+              }}>
+                <p style={{ fontSize: 18, marginBottom: 2 }}>{f.icon}</p>
+                <p style={{ fontSize: 10, color: C.textLight, fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 1 }}>{f.label}</p>
+                <p style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{f.value}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Description */}
+          <p style={{ fontSize: 14, color: C.textMid, lineHeight: 1.7, marginBottom: 18 }}>
+            {tree.description}
+          </p>
+
+          {/* Bloom calendar */}
+          <div style={{
+            background: C.surface, border: `1px solid ${C.border}`,
+            borderRadius: 14, padding: '14px 14px 12px', marginBottom: 18,
+          }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: C.textLight, letterSpacing: '0.05em', textTransform: 'uppercase', marginBottom: 10 }}>
+              🌸 Best month to visit
+            </p>
+            <div style={{ display: 'flex', gap: 3, marginBottom: 10 }}>
+              {MONTHS.map((m, i) => {
+                const isBloom = i === bloomIdx;
+                return (
+                  <div key={m} style={{
+                    flex: 1, textAlign: 'center',
+                    padding: '5px 0',
+                    borderRadius: 6,
+                    background: isBloom ? C.love : C.bgSubtle,
+                    color: isBloom ? C.loveText : C.textLight,
+                    fontSize: 8, fontWeight: isBloom ? 700 : 500,
+                    transition: 'background 0.2s',
+                  }}>{m}</div>
+                );
+              })}
+            </div>
+            <p style={{ fontSize: 12.5, color: C.textMid, lineHeight: 1.6, fontStyle: 'italic' }}>
+              "{tree.bloomNote}"
+            </p>
+          </div>
+
+          {/* Tags */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+            {tree.tags.map(t => <Tag key={t} label={t} />)}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Swipe card ────────────────────────────────────────────────
+function TreeCard({ tree, onLove, onSkip, onTap }) {
+  const [pressed, setPressed] = useState(null);
+  const [exitDir, setExitDir] = useState(null);
+  // drag state
+  const [drag, setDrag] = useState({ x: 0, y: 0, dragging: false });
+  const dragStart = useRef(null);
+  const cardRef = useRef(null);
+
+  const triggerExit = (dir) => {
+    setExitDir(dir);
+    setTimeout(() => {
+      dir === 'love' ? onLove() : onSkip();
+    }, 350);
+  };
+
+  // pointer handlers on the card image area for drag-to-swipe
+  const onPointerDown = (e) => {
+    dragStart.current = { x: e.clientX, y: e.clientY };
+    setDrag({ x: 0, y: 0, dragging: true });
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = (e) => {
+    if (!drag.dragging || exitDir) return;
+    const dx = e.clientX - dragStart.current.x;
+    const dy = e.clientY - dragStart.current.y;
+    setDrag({ x: dx, y: dy, dragging: true });
+  };
+
+  const onPointerUp = (e) => {
+    if (!drag.dragging) return;
+    const dx = drag.x;
+    const dy = drag.y;
+    setDrag({ x: 0, y: 0, dragging: false });
+    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) { onTap && onTap(); return; }
+    if (dx > 80) triggerExit('love');
+    else if (dx < -80) triggerExit('skip');
+  };
+
+  const rotation = exitDir
+    ? (exitDir === 'love' ? 15 : -15)
+    : drag.x * 0.08;
+
+  const tx = exitDir === 'love' ? '130%' : exitDir === 'skip' ? '-130%' : `${drag.x}px`;
+  const ty = exitDir ? '0px' : `${drag.y * 0.3}px`;
+
+  const swipeProgress = Math.min(Math.abs(drag.x) / 80, 1);
+  const showLoveHint = drag.x > 30;
+  const showSkipHint = drag.x < -30;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* Card — draggable */}
+      <div
+        ref={cardRef}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        style={{
+          background: C.surface,
+          borderRadius: 20,
+          overflow: 'hidden',
+          boxShadow: `0 ${4 + swipeProgress * 12}px ${16 + swipeProgress * 24}px oklch(0.18 0.02 100 / ${0.12 + swipeProgress * 0.1}), 0 1px 3px oklch(0.18 0.02 100 / 0.08)`,
+          border: `1px solid ${C.border}`,
+          transform: `translateX(${tx}) translateY(${ty}) rotate(${rotation}deg)`,
+          transition: exitDir ? 'transform 0.35s cubic-bezier(0.4,0,0.2,1)' : drag.dragging ? 'none' : 'transform 0.25s cubic-bezier(0.34,1.56,0.64,1)',
+          cursor: drag.dragging ? 'grabbing' : 'grab',
+          userSelect: 'none',
+          touchAction: 'none',
+        }}
+      >
+        {/* Image */}
+        <div style={{ width: '100%', height: 240, background: C.bgSubtle, position: 'relative', overflow: 'hidden' }}>
+          <TreeIllustration hue={tree.hue} sat={tree.sat} lit={tree.lit} id={tree.id} />
+
+          {/* Drag hint overlays */}
+          {(showLoveHint || exitDir === 'love') && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: `oklch(0.60 0.12 150 / ${Math.min(swipeProgress * 0.5, 0.4)})`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'background 0.1s',
+            }}>
+              <span style={{ fontSize: 64, opacity: swipeProgress, filter: 'drop-shadow(0 2px 8px oklch(0 0 0 / 0.2))' }}>💚</span>
+            </div>
+          )}
+          {(showSkipHint || exitDir === 'skip') && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: `oklch(0.50 0.02 100 / ${Math.min(swipeProgress * 0.4, 0.3)})`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'background 0.1s',
+            }}>
+              <span style={{ fontSize: 64, opacity: swipeProgress, filter: 'drop-shadow(0 2px 8px oklch(0 0 0 / 0.2))' }}>👋</span>
+            </div>
+          )}
+
+          {/* Drag direction badges */}
+          {showLoveHint && (
+            <div style={{
+              position: 'absolute', top: 16, left: 16,
+              background: C.love, color: C.loveText,
+              padding: '4px 12px', borderRadius: 99,
+              fontSize: 12, fontWeight: 700,
+              opacity: swipeProgress, transform: `rotate(-8deg)`,
+              boxShadow: '0 2px 8px oklch(0.48 0.14 150 / 0.4)',
+            }}>LOVE IT</div>
+          )}
+          {showSkipHint && (
+            <div style={{
+              position: 'absolute', top: 16, right: 16,
+              background: C.skip, color: C.skipText,
+              border: `1.5px solid ${C.border}`,
+              padding: '4px 12px', borderRadius: 99,
+              fontSize: 12, fontWeight: 700,
+              opacity: swipeProgress, transform: `rotate(8deg)`,
+            }}>SKIP</div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div style={{ padding: '16px 18px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
+            <h2 style={{ fontFamily: '"DM Serif Display", serif', fontSize: 22, fontWeight: 400, color: C.text, lineHeight: 1.2 }}>
+              {tree.name}
+            </h2>
+            <span style={{ fontSize: 12, color: C.textLight, whiteSpace: 'nowrap', marginLeft: 8, marginTop: 4 }}>
+              {tree.votes} 💚
+            </span>
+          </div>
+          <p style={{ fontSize: 12, color: C.textMid, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+              <circle cx="12" cy="9" r="2.5"/>
+            </svg>
+            {tree.location}
+          </p>
+          <p style={{ fontSize: 13.5, color: C.textMid, lineHeight: 1.6, marginBottom: 12 }}>
+            {tree.description}
+          </p>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {tree.tags.map(t => <Tag key={t} label={t} />)}
+          </div>
+        </div>
+      </div>
+
+      {/* Buttons — equal size */}
+      <div style={{ display: 'flex', gap: 12 }}>
+        <button
+          onPointerDown={() => setPressed('skip')}
+          onPointerUp={() => { setPressed(null); triggerExit('skip'); }}
+          style={{
+            flex: 1,
+            padding: '14px 0',
+            borderRadius: 14,
+            border: `1.5px solid ${C.border}`,
+            background: pressed === 'skip' ? 'oklch(0.88 0.005 100)' : C.skip,
+            color: C.skipText,
+            fontSize: 15,
+            fontWeight: 600,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            transition: 'background 0.1s, transform 0.1s',
+            transform: pressed === 'skip' ? 'scale(0.97)' : 'scale(1)',
+            letterSpacing: '-0.01em',
+          }}
+        >← Skip</button>
+        <button
+          onPointerDown={() => setPressed('love')}
+          onPointerUp={() => { setPressed(null); triggerExit('love'); }}
+          style={{
+            flex: 1,
+            padding: '14px 0',
+            borderRadius: 14,
+            border: 'none',
+            background: pressed === 'love' ? 'oklch(0.40 0.14 150)' : C.love,
+            color: C.loveText,
+            fontSize: 15,
+            fontWeight: 600,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            transition: 'background 0.1s, transform 0.1s',
+            transform: pressed === 'love' ? 'scale(0.97)' : 'scale(1)',
+            letterSpacing: '-0.01em',
+            boxShadow: '0 2px 12px oklch(0.48 0.14 150 / 0.35)',
+          }}
+        >💚 Love it</button>
+      </div>
+    </div>
+  );
+}
+
+// ── Upload modal ──────────────────────────────────────────────
+const ALL_TAGS = ['Scenic','Trail nearby','Peaceful','Urban','Architectural','Unique','Seasonal','Photography','Hiking'];
+
+function UploadModal({ onClose }) {
+  const [form, setForm] = useState({ name:'', location:'', desc:'', tags:[] });
+  const [submitted, setSubmitted] = useState(false);
+
+  const toggleTag = (t) => setForm(f => ({
+    ...f,
+    tags: f.tags.includes(t) ? f.tags.filter(x => x !== t) : [...f.tags, t],
+  }));
+
+  const submit = () => {
+    if (!form.name.trim()) return;
+    setSubmitted(true);
+    setTimeout(onClose, 1800);
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '11px 13px',
+    borderRadius: 10,
+    border: `1.5px solid ${C.border}`,
+    background: C.bg,
+    color: C.text,
+    fontSize: 14,
+    fontFamily: 'inherit',
+    outline: 'none',
+    transition: 'border-color 0.15s',
+  };
+
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'absolute', inset: 0,
+        background: 'oklch(0.10 0.01 100 / 0.45)',
+        zIndex: 100,
+        display: 'flex',
+        alignItems: 'flex-end',
+        borderRadius: 'inherit',
+        overflow: 'hidden',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%',
+          background: C.surface,
+          borderRadius: '20px 20px 0 0',
+          padding: '0 0 32px',
+          maxHeight: '88%',
+          overflowY: 'auto',
+          boxShadow: '0 -4px 30px oklch(0.15 0.01 100 / 0.18)',
+          animation: 'slideUp 0.28s cubic-bezier(0.32,0.72,0,1)',
+        }}
+      >
+        {/* Handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 0' }}>
+          <div style={{ width: 36, height: 4, borderRadius: 99, background: C.border }} />
+        </div>
+
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px 12px' }}>
+          <h3 style={{ fontFamily: '"DM Serif Display", serif', fontSize: 20, fontWeight: 400, color: C.text }}>
+            Share a tree
+          </h3>
+          <button onClick={onClose} style={{
+            width: 30, height: 30, borderRadius: 99, border: 'none',
+            background: C.bgSubtle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: C.textMid, fontSize: 16, fontFamily: 'inherit',
+          }}>✕</button>
+        </div>
+
+        {submitted ? (
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div style={{ fontSize: 52, marginBottom: 16 }}>🌳</div>
+            <p style={{ fontFamily: '"DM Serif Display", serif', fontSize: 20, color: C.text, marginBottom: 8 }}>
+              Tree submitted!
+            </p>
+            <p style={{ fontSize: 14, color: C.textMid }}>Thanks for sharing Berlin's beauty.</p>
+          </div>
+        ) : (
+          <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {/* Photo placeholder */}
+            <div style={{
+              height: 120, borderRadius: 12,
+              background: C.bgSubtle,
+              border: `2px dashed ${C.border}`,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 6, cursor: 'pointer',
+              color: C.textLight,
+            }}>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="3"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <path d="m21 15-5-5L5 21"/>
+              </svg>
+              <span style={{ fontSize: 13, fontWeight: 500 }}>Tap to add photo</span>
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: C.textMid, display: 'block', marginBottom: 5, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                Tree name
+              </label>
+              <input
+                style={inputStyle}
+                placeholder="e.g. Ancient oak in Tiergarten"
+                value={form.name}
+                onChange={e => setForm(f => ({...f, name: e.target.value}))}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: C.textMid, display: 'block', marginBottom: 5, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                Location
+              </label>
+              <input
+                style={inputStyle}
+                placeholder="e.g. Tiergarten, Mitte"
+                value={form.location}
+                onChange={e => setForm(f => ({...f, location: e.target.value}))}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: C.textMid, display: 'block', marginBottom: 5, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                Why is it special?
+              </label>
+              <textarea
+                style={{ ...inputStyle, height: 80, resize: 'none' }}
+                placeholder="Tell us what makes this tree beautiful…"
+                value={form.desc}
+                onChange={e => setForm(f => ({...f, desc: e.target.value}))}
+              />
+            </div>
+
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: C.textMid, display: 'block', marginBottom: 8, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                Tags
+              </label>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
+                {ALL_TAGS.map(t => {
+                  const active = form.tags.includes(t);
+                  const colors = TAG_COLORS[t] || { bg: C.greenLight, text: C.green };
+                  return (
+                    <button
+                      key={t}
+                      onClick={() => toggleTag(t)}
+                      style={{
+                        padding: '5px 12px',
+                        borderRadius: 99,
+                        border: active ? `1.5px solid ${colors.text}` : `1.5px solid ${C.border}`,
+                        background: active ? colors.bg : C.surface,
+                        color: active ? colors.text : C.textMid,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        fontFamily: 'inherit',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                      }}
+                    >{t}</button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <button
+              onClick={submit}
+              style={{
+                width: '100%',
+                padding: '14px',
+                borderRadius: 14,
+                border: 'none',
+                background: form.name.trim() ? C.love : 'oklch(0.80 0.04 150)',
+                color: C.loveText,
+                fontSize: 15,
+                fontWeight: 600,
+                fontFamily: 'inherit',
+                cursor: form.name.trim() ? 'pointer' : 'not-allowed',
+                marginTop: 4,
+                transition: 'background 0.2s',
+              }}
+            >Upload tree 🌳</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Leaderboard ───────────────────────────────────────────────
+function Leaderboard({ trees, onShowDetail }) {
+  const sorted = [...trees].sort((a, b) => b.votes - a.votes);
+
+  const rankColors = ['oklch(0.72 0.15 80)', 'oklch(0.65 0.06 230)', 'oklch(0.60 0.10 50)'];
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: '4px 0 0' }}>
+      {/* Header */}
+      <div style={{ padding: '12px 20px 16px', borderBottom: `1px solid ${C.border}` }}>
+        <p style={{ fontSize: 12, color: C.textLight, textAlign: 'center' }}>
+          Top trees voted by Berliners
+        </p>
+      </div>
+
+      <div style={{ padding: '8px 16px' }}>
+        {sorted.map((tree, i) => (
+          <div
+            key={tree.id}
+            onClick={() => onShowDetail && onShowDetail(tree)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '12px 0',
+              borderBottom: i < sorted.length - 1 ? `1px solid ${C.border}` : 'none',
+              cursor: 'pointer',
+            }}
+          >
+            {/* Rank */}
+            <div style={{
+              width: 28,
+              textAlign: 'center',
+              flexShrink: 0,
+            }}>
+              {i < 3 ? (
+                <span style={{ fontSize: 18 }}>
+                  {['🥇','🥈','🥉'][i]}
+                </span>
+              ) : (
+                <span style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: C.textLight,
+                }}>{i + 1}</span>
+              )}
+            </div>
+
+            {/* Thumb */}
+            <div style={{
+              width: 56, height: 56,
+              borderRadius: 12,
+              overflow: 'hidden',
+              flexShrink: 0,
+              border: `1px solid ${C.border}`,
+            }}>
+              <TreeIllustration hue={tree.hue} sat={tree.sat} lit={tree.lit} id={tree.id} />
+            </div>
+
+            {/* Info */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{
+                fontWeight: 600,
+                fontSize: 14,
+                color: C.text,
+                marginBottom: 2,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}>{tree.name}</p>
+              <p style={{
+                fontSize: 11.5,
+                color: C.textLight,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}>{tree.location}</p>
+            </div>
+
+            {/* Votes */}
+            <div style={{ flexShrink: 0, textAlign: 'right' }}>
+              <p style={{ fontSize: 14, fontWeight: 700, color: C.green }}>{tree.votes}</p>
+              <p style={{ fontSize: 10, color: C.textLight }}>💚 votes</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Swipe screen ──────────────────────────────────────────────
+function SwipeScreen({ trees, setTrees, onUpload, onShowDetail }) {
+  const [idx, setIdx] = useState(0);
+  const [loved, setLoved] = useState(new Set());
+  const [allDone, setAllDone] = useState(false);
+  const [ctaVisible, setCtaVisible] = useState(false);
+
+  // vertical swipe-up detection on the whole screen
+  const vertStart = useRef(null);
+  const screenRef = useRef(null);
+
+  const onVertDown = (e) => {
+    vertStart.current = { y: e.clientY ?? e.touches?.[0]?.clientY };
+  };
+  const onVertUp = (e) => {
+    if (!vertStart.current) return;
+    const endY = e.clientY ?? e.changedTouches?.[0]?.clientY;
+    const dy = vertStart.current.y - endY;
+    vertStart.current = null;
+    if (dy > 50) setCtaVisible(true);   // swipe up → reveal
+    if (dy < -50) setCtaVisible(false); // swipe down → hide
+  };
+
+  const current = trees[idx];
+
+  const advance = () => {
+    if (idx + 1 >= trees.length) setAllDone(true);
+    else setIdx(i => i + 1);
+  };
+
+  const onLove = () => {
+    setTrees(prev => prev.map(t => t.id === current.id ? {...t, votes: t.votes + 1} : t));
+    setLoved(s => new Set([...s, current.id]));
+    advance();
+  };
+
+  if (allDone) return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: 32, gap: 16,
+    }}>
+      <div style={{ fontSize: 56 }}>🌳</div>
+      <p style={{ fontFamily: '"DM Serif Display", serif', fontSize: 22, color: C.text, textAlign: 'center' }}>
+        You've seen all the trees!
+      </p>
+      <p style={{ fontSize: 14, color: C.textMid, textAlign: 'center' }}>
+        You loved {loved.size} tree{loved.size !== 1 ? 's' : ''} this session.
+      </p>
+      <button
+        onClick={() => { setIdx(0); setAllDone(false); setLoved(new Set()); }}
+        style={{
+          padding: '12px 28px', borderRadius: 12, border: 'none',
+          background: C.love, color: C.loveText,
+          fontSize: 14, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+        }}
+      >Start over</button>
+    </div>
+  );
+
+  return (
+    <div
+      ref={screenRef}
+      onPointerDown={onVertDown}
+      onPointerUp={onVertUp}
+      style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}
+    >
+      {/* Scrollable card area */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px 0' }}>
+        {loved.size > 0 && (
+          <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'flex-end' }}>
+            <p style={{ fontSize: 12, color: C.green, fontWeight: 600 }}>
+              {loved.size} loved 💚
+            </p>
+          </div>
+        )}
+
+        <TreeCard
+          key={current.id}
+          tree={current}
+          onLove={onLove}
+          onSkip={advance}
+          onTap={() => onShowDetail(current)}
+        />
+
+        {/* Swipe-up hint */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 6,
+          padding: '12px 0 16px',
+          opacity: ctaVisible ? 0 : 0.45,
+          transition: 'opacity 0.3s',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={C.textLight} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 19V5M5 12l7-7 7 7"/>
+          </svg>
+          <span style={{ fontSize: 11, color: C.textLight, fontWeight: 500 }}>Swipe up to share a tree</span>
+        </div>
+      </div>
+
+      {/* Upload CTA — slides up from bottom */}
+      <div style={{
+        position: 'absolute',
+        bottom: 0, left: 0, right: 0,
+        transform: ctaVisible ? 'translateY(0)' : 'translateY(100%)',
+        transition: 'transform 0.32s cubic-bezier(0.32,0.72,0,1)',
+        background: C.surface,
+        borderTop: `1px solid ${C.border}`,
+        borderRadius: '20px 20px 0 0',
+        padding: '12px 20px 24px',
+        boxShadow: '0 -4px 24px oklch(0.15 0.01 100 / 0.12)',
+        zIndex: 10,
+      }}>
+        {/* Drag handle */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 14 }}>
+          <div style={{ width: 36, height: 4, borderRadius: 99, background: C.border }} />
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 600, color: C.text, marginBottom: 2 }}>Found a beautiful tree?</p>
+            <p style={{ fontSize: 12, color: C.textMid }}>Share it with Berlin 🌳</p>
+          </div>
+          <button
+            onClick={onUpload}
+            style={{
+              padding: '10px 18px',
+              borderRadius: 12,
+              border: 'none',
+              background: C.love,
+              color: C.loveText,
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              boxShadow: '0 2px 10px oklch(0.48 0.14 150 / 0.3)',
+            }}
+          >Upload photo</button>
+        </div>
+        <button
+          onClick={() => setCtaVisible(false)}
+          style={{
+            position: 'absolute', top: 16, right: 16,
+            width: 26, height: 26, borderRadius: 99,
+            border: 'none', background: C.bgSubtle,
+            color: C.textMid, fontSize: 13,
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontFamily: 'inherit',
+          }}
+        >✕</button>
+      </div>
+    </div>
+  );
+}
+
+// ── App shell ─────────────────────────────────────────────────
+function App() {
+  const [tab, setTab] = useState('swipe');
+  const [showUpload, setShowUpload] = useState(false);
+  const [trees, setTrees] = useState(TREES);
+  const [selectedTree, setSelectedTree] = useState(null);
+
+  const TabBtn = ({ id, label }) => (
+    <button
+      onClick={() => setTab(id)}
+      style={{
+        flex: 1,
+        padding: '12px 0',
+        border: 'none',
+        background: 'transparent',
+        color: tab === id ? C.green : C.textLight,
+        fontFamily: 'inherit',
+        fontSize: 13,
+        fontWeight: tab === id ? 700 : 500,
+        cursor: 'pointer',
+        borderBottom: `2px solid ${tab === id ? C.green : 'transparent'}`,
+        transition: 'all 0.15s',
+        letterSpacing: '-0.01em',
+      }}
+    >{label}</button>
+  );
+
+  return (
+    <div style={{
+      width: '100%',
+      height: '100%',
+      background: C.bg,
+      display: 'flex',
+      flexDirection: 'column',
+      position: 'relative',
+      overflow: 'hidden',
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '14px 20px 0',
+        background: C.surface,
+        borderBottom: `1px solid ${C.border}`,
+        flexShrink: 0,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+          <h1 style={{
+            fontFamily: '"DM Serif Display", serif',
+            fontSize: 22,
+            fontWeight: 400,
+            color: C.text,
+            letterSpacing: '-0.01em',
+          }}>
+            I Tree You 🌳
+          </h1>
+          <span style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: C.greenMid,
+            background: C.greenLight,
+            padding: '3px 9px',
+            borderRadius: 99,
+          }}>Berlin</span>
+        </div>
+        <div style={{ display: 'flex' }}>
+          <TabBtn id="swipe" label="🌿 Discover" />
+          <TabBtn id="leaderboard" label="🏆 Top Trees" />
+        </div>
+      </div>
+
+      {/* Content */}
+      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', background: C.bg }}>
+        {tab === 'swipe'
+          ? <SwipeScreen trees={trees} setTrees={setTrees} onUpload={() => setShowUpload(true)} onShowDetail={setSelectedTree} />
+          : <Leaderboard trees={trees} onShowDetail={setSelectedTree} />
+        }
+      </div>
+
+      {/* Tree Detail */}
+      {selectedTree && <TreeDetail tree={selectedTree} onClose={() => setSelectedTree(null)} />}
+
+      {/* Upload Modal */}
+      {showUpload && <UploadModal onClose={() => setShowUpload(false)} />}
+    </div>
+  );
+}
+
+// ── Root render ───────────────────────────────────────────────
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
+  <IOSDevice>
+    <App />
+  </IOSDevice>
+);
+</script>
+
+<style>
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+</style>
+</body>
+</html>
