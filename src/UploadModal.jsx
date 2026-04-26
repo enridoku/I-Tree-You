@@ -1,21 +1,21 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { C, TAG_COLORS, ALL_TAGS } from './data.js';
 
 export default function UploadModal({ onClose }) {
   const [form, setForm] = useState({ name: '', location: '', desc: '', tags: [] });
   const [submitted, setSubmitted] = useState(false);
-  const [visible, setVisible] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const dragStart = useRef(null);
 
-  useEffect(() => {
-    requestAnimationFrame(() => setVisible(true));
-  }, []);
+  // Refs keep values current inside pointer handlers without stale-closure issues
+  const draggingRef = useRef(false);
+  const dragYRef = useRef(0);
+  const dragStartRef = useRef(null);
 
-  const dismiss = () => {
-    setVisible(false);
-    setTimeout(onClose, 280);
+  const dismissWithSlide = () => {
+    // Animate the sheet off-screen, then close
+    setDragY(window.innerHeight);
+    setTimeout(onClose, 300);
   };
 
   const toggleTag = (t) => setForm(f => ({
@@ -44,11 +44,10 @@ export default function UploadModal({ onClose }) {
 
   return (
     <div
-      onClick={dismiss}
+      onClick={onClose}
       style={{
         position: 'absolute', inset: 0,
-        background: visible ? 'oklch(0.10 0.01 100 / 0.45)' : 'oklch(0.10 0.01 100 / 0)',
-        transition: 'background 0.28s',
+        background: 'oklch(0.10 0.01 100 / 0.45)',
         zIndex: 100,
         display: 'flex',
         alignItems: 'flex-end',
@@ -66,32 +65,42 @@ export default function UploadModal({ onClose }) {
           maxHeight: '88%',
           overflowY: isDragging ? 'hidden' : 'auto',
           boxShadow: '0 -4px 30px oklch(0.15 0.01 100 / 0.18)',
-          transform: visible ? `translateY(${dragY}px)` : 'translateY(100%)',
-          transition: isDragging ? 'none' : 'transform 0.30s cubic-bezier(0.32,0.72,0,1)',
+          transform: `translateY(${dragY}px)`,
+          transition: isDragging ? 'none' : 'transform 0.28s cubic-bezier(0.32,0.72,0,1)',
+          animation: 'slideUp 0.28s cubic-bezier(0.32,0.72,0,1)',
         }}
       >
         {/* Handle — drag target */}
         <div
           onPointerDown={(e) => {
-            dragStart.current = e.clientY;
+            dragStartRef.current = e.clientY;
+            draggingRef.current = true;
             setIsDragging(true);
             e.currentTarget.setPointerCapture(e.pointerId);
           }}
           onPointerMove={(e) => {
-            if (!isDragging) return;
-            setDragY(Math.max(0, e.clientY - dragStart.current));
+            if (!draggingRef.current) return;
+            const dy = Math.max(0, e.clientY - dragStartRef.current);
+            dragYRef.current = dy;
+            setDragY(dy);
           }}
           onPointerUp={() => {
+            draggingRef.current = false;
             setIsDragging(false);
-            if (dragY > 100) dismiss();
-            else setDragY(0);
-            dragStart.current = null;
+            if (dragYRef.current > 100) {
+              dismissWithSlide();
+            } else {
+              setDragY(0);
+              dragYRef.current = 0;
+            }
+            dragStartRef.current = null;
           }}
           style={{
             display: 'flex', justifyContent: 'center',
             padding: '14px 0',
             cursor: 'grab',
             touchAction: 'none',
+            userSelect: 'none',
           }}
         >
           <div style={{ width: 36, height: 4, borderRadius: 99, background: C.border }} />
@@ -102,7 +111,7 @@ export default function UploadModal({ onClose }) {
           <h3 style={{ fontFamily: '"DM Serif Display", serif', fontSize: 20, fontWeight: 400, color: C.text }}>
             Share a tree
           </h3>
-          <button onClick={dismiss} style={{
+          <button onClick={onClose} style={{
             width: 30, height: 30, borderRadius: 99, border: 'none',
             background: C.bgSubtle, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: C.textMid, fontSize: 16, fontFamily: 'inherit',
@@ -119,7 +128,6 @@ export default function UploadModal({ onClose }) {
           </div>
         ) : (
           <div style={{ padding: '0 20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Photo placeholder */}
             <div style={{
               height: 120, borderRadius: 12,
               background: C.bgSubtle,
