@@ -103,12 +103,11 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
         onPointerUp={onZoneUp}
         style={{
           flexShrink: 0,
-          height: 64,
+          height: 80,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          gap: 4,
           cursor: 'ns-resize',
           userSelect: 'none',
           touchAction: 'none',
@@ -117,10 +116,11 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
         }}
       >
         <svg width="36" height="28" viewBox="0 0 36 28" fill="none">
-          <path d="M10 10l8-7 8 7" stroke={C.textLight} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.35"/>
-          <path d="M10 17l8-7 8 7" stroke={C.textLight} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.6"/>
-          <path d="M10 24l8-7 8 7" stroke={C.textLight} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
+          <path d="M10 10l8-7 8 7" stroke={C.green} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.35"/>
+          <path d="M10 17l8-7 8 7" stroke={C.green} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.6"/>
+          <path d="M10 24l8-7 8 7" stroke={C.green} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
         </svg>
+        <div style={{ width: 2, height: 12, background: C.brown, borderRadius: 1, margin: '6px 0 5px' }} />
         <span style={{ fontSize: 10, color: C.textLight, fontWeight: 500, letterSpacing: '0.04em' }}>
           share a tree
         </span>
@@ -139,7 +139,7 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
         position: 'absolute',
         bottom: 0, left: 0, right: 0,
         transform: ctaVisible ? `translateY(${ctaDragY}px)` : 'translateY(100%)',
-        transition: ctaIsDragging ? 'none' : 'transform 0.32s cubic-bezier(0.32,0.72,0,1)',
+        transition: (ctaIsDragging || !ctaVisible) ? 'none' : 'transform 0.32s cubic-bezier(0.32,0.72,0,1)',
         background: C.surface,
         borderTop: `1px solid ${C.border}`,
         borderRadius: '20px 20px 0 0',

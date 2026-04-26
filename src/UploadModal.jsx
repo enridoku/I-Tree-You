@@ -67,7 +67,6 @@ export default function UploadModal({ onClose }) {
           boxShadow: '0 -4px 30px oklch(0.15 0.01 100 / 0.18)',
           transform: `translateY(${dragY}px)`,
           transition: isDragging ? 'none' : 'transform 0.28s cubic-bezier(0.32,0.72,0,1)',
-          animation: 'slideUp 0.28s cubic-bezier(0.32,0.72,0,1)',
         }}
       >
         {/* Handle — drag target */}
