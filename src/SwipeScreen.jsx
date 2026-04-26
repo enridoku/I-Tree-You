@@ -80,7 +80,7 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative' }}>
 
       {/* Card area */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '8px 16px 0' }}>
+      <div style={{ flex: '0 1 auto', minHeight: 0, overflowY: 'auto', padding: '8px 16px 0' }}>
         {loved.size > 0 && (
           <div style={{ marginBottom: 8, display: 'flex', justifyContent: 'flex-end' }}>
             <p style={{ fontSize: 12, color: C.green, fontWeight: 600 }}>
@@ -102,8 +102,8 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
         onPointerDown={onZoneDown}
         onPointerUp={onZoneUp}
         style={{
-          flexShrink: 0,
-          height: 80,
+          flex: 1,
+          minHeight: 60,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -120,7 +120,7 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
           <path d="M10 17l8-7 8 7" stroke={C.green} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.6"/>
           <path d="M10 24l8-7 8 7" stroke={C.green} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
         </svg>
-        <div style={{ width: 2, height: 12, background: C.brown, borderRadius: 1, margin: '2px 0 2px' }} />
+        <div style={{ width: 2, height: 12, background: C.brown, borderRadius: 1, margin: '1px 0 2px' }} />
         <span style={{ fontSize: 10, color: C.textLight, fontWeight: 500, letterSpacing: '0.04em' }}>
           share a tree
         </span>
