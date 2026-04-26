@@ -8,6 +8,7 @@ export default function UploadModal({ onClose, onTreeAdded }) {
   const [photoPreview, setPhotoPreview] = useState(null); // object URL for preview
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -42,9 +43,18 @@ export default function UploadModal({ onClose, onTreeAdded }) {
   const submit = async () => {
     if (!form.name.trim() || submitting) return;
     setSubmitting(true);
+    setUploadError(null);
     try {
       let photoUrl = null;
-      if (photo) photoUrl = await uploadTreePhoto(photo);
+      if (photo) {
+        // Race the upload against a 30-second timeout so the button never hangs forever
+        photoUrl = await Promise.race([
+          uploadTreePhoto(photo),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Upload timed out — check your connection and try again.')), 30000)
+          ),
+        ]);
+      }
 
       await addNewTree({
         name: form.name.trim(),
@@ -70,7 +80,9 @@ export default function UploadModal({ onClose, onTreeAdded }) {
       onTreeAdded?.();
       setTimeout(onClose, 1800);
     } catch (err) {
-      console.error('Failed to add tree:', err);
+      console.error('Upload error:', err);
+      setUploadError(err.message || 'Something went wrong. Please try again.');
+    } finally {
       setSubmitting(false);
     }
   };
@@ -288,6 +300,12 @@ export default function UploadModal({ onClose, onTreeAdded }) {
                 })}
               </div>
             </div>
+
+            {uploadError && (
+              <p style={{ fontSize: 12, color: C.heartRed, textAlign: 'center', lineHeight: 1.5 }}>
+                {uploadError}
+              </p>
+            )}
 
             <button
               onClick={submit}
