@@ -1,9 +1,11 @@
 import { useState, useRef } from 'react';
 import { C, TAG_COLORS, ALL_TAGS } from './data.js';
+import { addNewTree } from './firestore.js';
 
-export default function UploadModal({ onClose }) {
+export default function UploadModal({ onClose, onTreeAdded }) {
   const [form, setForm] = useState({ name: '', location: '', desc: '', tags: [] });
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -23,10 +25,36 @@ export default function UploadModal({ onClose }) {
     tags: f.tags.includes(t) ? f.tags.filter(x => x !== t) : [...f.tags, t],
   }));
 
-  const submit = () => {
-    if (!form.name.trim()) return;
-    setSubmitted(true);
-    setTimeout(onClose, 1800);
+  const submit = async () => {
+    if (!form.name.trim() || submitting) return;
+    setSubmitting(true);
+    try {
+      await addNewTree({
+        name: form.name.trim(),
+        location: form.location.trim(),
+        description: form.desc.trim(),
+        tags: form.tags,
+        votes: 0,
+        species: '',
+        type: '',
+        bloomMonth: '',
+        bloomNote: '',
+        facts: [],
+        hue: 130, sat: 0.10, lit: 0.40,
+        gallery: [
+          { litOffset: 0,    hueOffset: 0,  label: 'Main view' },
+          { litOffset: 0.08, hueOffset: 10, label: 'Bright day' },
+          { litOffset: -0.08,hueOffset: -5, label: 'Evening' },
+          { litOffset: 0.04, hueOffset: 20, label: 'Golden hour' },
+        ],
+      });
+      setSubmitted(true);
+      onTreeAdded?.();
+      setTimeout(onClose, 1800);
+    } catch (err) {
+      console.error('Failed to add tree:', err);
+      setSubmitting(false);
+    }
   };
 
   const inputStyle = {
@@ -216,16 +244,16 @@ export default function UploadModal({ onClose }) {
                 padding: '14px',
                 borderRadius: 14,
                 border: 'none',
-                background: form.name.trim() ? C.love : 'oklch(0.80 0.04 150)',
+                background: (form.name.trim() && !submitting) ? C.love : 'oklch(0.80 0.04 150)',
                 color: C.loveText,
                 fontSize: 15,
                 fontWeight: 600,
                 fontFamily: 'inherit',
-                cursor: form.name.trim() ? 'pointer' : 'not-allowed',
+                cursor: (form.name.trim() && !submitting) ? 'pointer' : 'not-allowed',
                 marginTop: 4,
                 transition: 'background 0.2s',
               }}
-            >Upload tree 🌳</button>
+            >{submitting ? 'Uploading…' : 'Upload tree 🌳'}</button>
           </div>
         )}
       </div>

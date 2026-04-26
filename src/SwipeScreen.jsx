@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { C } from './data.js';
+import { incrementTreeVotes } from './firestore.js';
 import TreeCard from './TreeCard.jsx';
 
 export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail }) {
@@ -47,9 +48,12 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
   };
 
   const onLove = () => {
+    // Optimistic local update so the UI responds instantly
     setTrees(prev => prev.map(t => t.id === current.id ? { ...t, votes: t.votes + 1 } : t));
     setLoved(s => new Set([...s, current.id]));
     advance();
+    // Persist to Firestore (fire-and-forget — uses atomic increment to avoid race conditions)
+    incrementTreeVotes(current.id).catch(err => console.error('Vote failed:', err));
   };
 
   if (allDone) return (
