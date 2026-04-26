@@ -120,7 +120,7 @@ export default function SwipeScreen({ trees, setTrees, onUpload, onShowDetail })
           <path d="M10 17l8-7 8 7" stroke={C.green} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" opacity="0.6"/>
           <path d="M10 24l8-7 8 7" stroke={C.green} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9"/>
         </svg>
-        <div style={{ width: 2, height: 12, background: C.brown, borderRadius: 1, margin: '6px 0 5px' }} />
+        <div style={{ width: 2, height: 12, background: C.brown, borderRadius: 1, margin: '2px 0 2px' }} />
         <span style={{ fontSize: 10, color: C.textLight, fontWeight: 500, letterSpacing: '0.04em' }}>
           share a tree
         </span>
