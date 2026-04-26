@@ -8,7 +8,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "seed": "node scripts/seed.js",
-    "reset-votes": "node scripts/reset-votes.js"
+    "reset-votes": "node scripts/reset-votes.js",
+    "set-cors": "gsutil cors set cors.json gs://i-tree-you.firebasestorage.app"
   },
   "dependencies": {
     "firebase": "^12.12.1",
