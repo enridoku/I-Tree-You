@@ -41,7 +41,10 @@ export default function Leaderboard({ trees, onShowDetail }) {
               flexShrink: 0,
               border: `1px solid ${C.border}`,
             }}>
-              <TreeIllustration hue={tree.hue} sat={tree.sat} lit={tree.lit} id={tree.id} />
+              {tree.photoUrl
+                ? <img src={tree.photoUrl} alt={tree.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                : <TreeIllustration hue={tree.hue} sat={tree.sat} lit={tree.lit} id={tree.id} />
+              }
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>

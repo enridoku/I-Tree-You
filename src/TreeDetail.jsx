@@ -48,7 +48,10 @@ export default function TreeDetail({ tree, onClose }) {
         {/* Gallery hero */}
         <div style={{ position: 'relative', flexShrink: 0 }}>
           <div style={{ width: '100%', height: 240, background: C.bgSubtle, overflow: 'hidden' }}>
-            <TreeIllustration hue={adjHue} sat={tree.sat} lit={adjLit} id={tree.id + galleryIdx * 10} />
+            {tree.photoUrl
+              ? <img src={tree.photoUrl} alt={tree.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+              : <TreeIllustration hue={adjHue} sat={tree.sat} lit={adjLit} id={tree.id + galleryIdx * 10} />
+            }
           </div>
           <div style={{
             position: 'absolute', bottom: 0, left: 0, right: 0, height: 80,
@@ -77,8 +80,8 @@ export default function TreeDetail({ tree, onClose }) {
           }}>{active.label}</div>
         </div>
 
-        {/* Thumbnail strip */}
-        <div style={{
+        {/* Thumbnail strip — only shown for illustration-based trees */}
+        {!tree.photoUrl && <div style={{
           display: 'flex', gap: 6, padding: '10px 14px',
           background: C.surface,
           borderBottom: `1px solid ${C.border}`,
@@ -103,7 +106,7 @@ export default function TreeDetail({ tree, onClose }) {
               </button>
             );
           })}
-        </div>
+        </div>}
 
         {/* Scrollable info */}
         <div style={{ flex: 1, overflowY: 'auto', padding: '18px 18px 32px' }}>

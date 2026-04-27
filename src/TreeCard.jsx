@@ -71,7 +71,10 @@ export default function TreeCard({ tree, onLove, onSkip, onTap }) {
       >
         {/* Image */}
         <div style={{ width: '100%', height: 240, background: C.bgSubtle, position: 'relative', overflow: 'hidden' }}>
-          <TreeIllustration hue={tree.hue} sat={tree.sat} lit={tree.lit} id={tree.id} />
+          {tree.photoUrl
+            ? <img src={tree.photoUrl} alt={tree.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            : <TreeIllustration hue={tree.hue} sat={tree.sat} lit={tree.lit} id={tree.id} />
+          }
 
           {(showLoveHint || exitDir === 'love') && (
             <div style={{
