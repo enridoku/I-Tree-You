@@ -70,20 +70,12 @@ export default function TreeCard({ tree, onLove, onSkip, onTap }) {
         }}
       >
         {/* Image */}
-        <div style={{ width: '100%', height: 240, background: C.bgSubtle, position: 'relative', overflow: 'hidden' }}>
+        <div style={{ width: '100%', height: 360, background: C.bgSubtle, position: 'relative', overflow: 'hidden' }}>
           {(() => {
             const photos = tree.photoUrls?.length ? tree.photoUrls : tree.photoUrl ? [tree.photoUrl] : [];
             return photos.length > 0
               ? <>
                   <img src={photos[0]} alt={tree.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                  {photos.length > 1 && (
-                    <div style={{
-                      position: 'absolute', top: 10, right: 12,
-                      background: 'oklch(0 0 0 / 0.42)', backdropFilter: 'blur(6px)',
-                      borderRadius: 99, padding: '2px 8px',
-                      color: '#fff', fontSize: 10, fontWeight: 700,
-                    }}>📷 {photos.length}</div>
-                  )}
                 </>
               : <TreeIllustration hue={tree.hue} sat={tree.sat} lit={tree.lit} id={tree.id} />;
           })()}

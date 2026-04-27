@@ -228,13 +228,14 @@ export default function TreeDetail({ tree, onClose }) {
         )}
 
         {/* ── Full scrollable info ── */}
+        {/* Outer: flex-animates to 0, clips padding so nothing bleeds through */}
         <div style={{
-          flex: 1,
-          overflowY: photoExpanded ? 'hidden' : 'auto',
-          maxHeight: photoExpanded ? 0 : 600,
-          transition: `max-height 0.42s ${EASING}`,
-          padding: '18px 18px 32px',
+          flex: photoExpanded ? '0 0 0' : '1 0 0',
+          overflow: 'hidden',
+          transition: `flex 0.42s ${EASING}`,
         }}>
+        {/* Inner: holds the padding and scroll independently */}
+        <div style={{ padding: '18px 18px 32px', overflowY: 'auto', height: '100%' }}>
           <h2 style={{
             fontFamily: '"DM Serif Display", serif',
             fontSize: 26, fontWeight: 400, color: C.text,
@@ -294,6 +295,7 @@ export default function TreeDetail({ tree, onClose }) {
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
             {(tree.tags || []).map(t => <Tag key={t} label={t} />)}
           </div>
+        </div>
         </div>
       </div>
     </div>
