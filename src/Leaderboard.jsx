@@ -41,10 +41,12 @@ export default function Leaderboard({ trees, onShowDetail }) {
               flexShrink: 0,
               border: `1px solid ${C.border}`,
             }}>
-              {tree.photoUrl
-                ? <img src={tree.photoUrl} alt={tree.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                : <TreeIllustration hue={tree.hue} sat={tree.sat} lit={tree.lit} id={tree.id} />
-              }
+              {(() => {
+                const first = tree.photoUrls?.[0] ?? tree.photoUrl ?? null;
+                return first
+                  ? <img src={first} alt={tree.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  : <TreeIllustration hue={tree.hue} sat={tree.sat} lit={tree.lit} id={tree.id} />;
+              })()}
             </div>
 
             <div style={{ flex: 1, minWidth: 0 }}>
