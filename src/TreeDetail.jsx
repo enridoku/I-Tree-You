@@ -5,25 +5,31 @@ import TreeIllustration from './TreeIllustration.jsx';
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+const PIN = (
+  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.textMid} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
+    <circle cx="12" cy="9" r="2.5"/>
+  </svg>
+);
+
+const EASING = 'cubic-bezier(0.32,0.72,0,1)';
+
 export default function TreeDetail({ tree, onClose }) {
   const [galleryIdx, setGalleryIdx] = useState(0);
   const [visible, setVisible] = useState(false);
+  const [photoExpanded, setPhotoExpanded] = useState(false);
 
-  useEffect(() => {
-    requestAnimationFrame(() => setVisible(true));
-  }, []);
+  useEffect(() => { requestAnimationFrame(() => setVisible(true)); }, []);
 
-  const close = () => {
-    setVisible(false);
-    setTimeout(onClose, 280);
-  };
+  const close = () => { setVisible(false); setTimeout(onClose, 280); };
 
   const gallery = tree.gallery || [{ litOffset: 0, hueOffset: 0, label: 'Main view' }];
-  const active = gallery[galleryIdx];
-  const adjLit = Math.max(0.1, Math.min(0.9, tree.lit + (active.litOffset || 0)));
-  const adjHue = tree.hue + (active.hueOffset || 0);
-
+  const active  = gallery[galleryIdx];
+  const adjLit  = Math.max(0.1, Math.min(0.9, tree.lit + (active.litOffset || 0)));
+  const adjHue  = tree.hue + (active.hueOffset || 0);
   const bloomIdx = MONTHS.findIndex(m => tree.bloomMonth && tree.bloomMonth.startsWith(m));
+
+  const canExpand = !!tree.photoUrl;
 
   return (
     <div style={{
@@ -41,75 +47,170 @@ export default function TreeDetail({ tree, onClose }) {
           display: 'flex', flexDirection: 'column',
           overflow: 'hidden',
           transform: visible ? 'translateY(0)' : 'translateY(100%)',
-          transition: 'transform 0.30s cubic-bezier(0.32,0.72,0,1)',
+          transition: `transform 0.30s ${EASING}`,
           boxShadow: '0 -8px 40px oklch(0.10 0.01 100 / 0.18)',
         }}
       >
-        {/* Gallery hero */}
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-          <div style={{ width: '100%', height: 240, background: C.bgSubtle, overflow: 'hidden' }}>
-            {tree.photoUrl
-              ? <img src={tree.photoUrl} alt={tree.name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              : <TreeIllustration hue={adjHue} sat={tree.sat} lit={adjLit} id={tree.id + galleryIdx * 10} />
-            }
-          </div>
+        {/* ── Hero (photo or illustration) ── */}
+        <div
+          onClick={() => canExpand && setPhotoExpanded(p => !p)}
+          style={{
+            position: 'relative',
+            flex: photoExpanded ? '1 0 240px' : '0 0 240px',
+            transition: `flex 0.42s ${EASING}`,
+            background: C.bgSubtle,
+            overflow: 'hidden',
+            cursor: canExpand ? 'pointer' : 'default',
+          }}
+        >
+          {tree.photoUrl
+            ? <img
+                src={tree.photoUrl}
+                alt={tree.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+              />
+            : <div style={{ position: 'absolute', inset: 0 }}>
+                <TreeIllustration hue={adjHue} sat={tree.sat} lit={adjLit} id={tree.id + galleryIdx * 10} />
+              </div>
+          }
+
+          {/* Gradient */}
           <div style={{
             position: 'absolute', bottom: 0, left: 0, right: 0, height: 80,
             background: 'linear-gradient(to top, oklch(0.12 0.01 100 / 0.55), transparent)',
+            pointerEvents: 'none',
           }} />
-          <button onClick={close} style={{
-            position: 'absolute', top: 14, left: 14,
-            width: 34, height: 34, borderRadius: 99,
-            border: 'none', background: 'oklch(0.10 0.01 100 / 0.45)',
-            backdropFilter: 'blur(8px)',
-            color: '#fff', fontSize: 18, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'inherit',
-          }}>‹</button>
-          <div style={{
-            position: 'absolute', top: 14, right: 14,
-            background: 'oklch(0.10 0.01 100 / 0.45)',
-            backdropFilter: 'blur(8px)',
-            color: '#fff', borderRadius: 99,
-            padding: '4px 11px', fontSize: 12, fontWeight: 700,
-          }}>{tree.votes} 💚</div>
-          <div style={{
-            position: 'absolute', bottom: 10, left: 14,
-            color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: 600,
-            letterSpacing: '0.04em', textTransform: 'uppercase',
-          }}>{active.label}</div>
+
+          {/* Back button — stopPropagation so it doesn't toggle expand */}
+          <button
+            onClick={e => { e.stopPropagation(); close(); }}
+            style={{
+              position: 'absolute', top: 14, left: 14,
+              width: 34, height: 34, borderRadius: 99,
+              border: 'none', background: 'oklch(0.10 0.01 100 / 0.45)',
+              backdropFilter: 'blur(8px)',
+              color: '#fff', fontSize: 18, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontFamily: 'inherit',
+            }}
+          >‹</button>
+
+          {/* Votes */}
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: 'absolute', top: 14, right: 14,
+              background: 'oklch(0.10 0.01 100 / 0.45)',
+              backdropFilter: 'blur(8px)',
+              color: '#fff', borderRadius: 99,
+              padding: '4px 11px', fontSize: 12, fontWeight: 700,
+            }}
+          >{tree.votes} 💚</div>
+
+          {/* Gallery view label (illustration trees only) */}
+          {!tree.photoUrl && (
+            <div style={{
+              position: 'absolute', bottom: 10, left: 14,
+              color: 'rgba(255,255,255,0.85)', fontSize: 11, fontWeight: 600,
+              letterSpacing: '0.04em', textTransform: 'uppercase',
+              pointerEvents: 'none',
+            }}>{active.label}</div>
+          )}
+
+          {/* Expand / collapse hint pill */}
+          {canExpand && (
+            <div style={{
+              position: 'absolute', bottom: 12, right: 14,
+              background: 'oklch(0.10 0.01 100 / 0.45)',
+              backdropFilter: 'blur(8px)',
+              borderRadius: 99, padding: '3px 9px',
+              display: 'flex', alignItems: 'center', gap: 4,
+              color: 'rgba(255,255,255,0.85)',
+              fontSize: 10, fontWeight: 600, letterSpacing: '0.03em',
+              pointerEvents: 'none',
+              transition: `opacity 0.3s`,
+            }}>
+              {photoExpanded ? (
+                <>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                  collapse
+                </>
+              ) : (
+                <>
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                  </svg>
+                  expand
+                </>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Thumbnail strip — only shown for illustration-based trees */}
-        {!tree.photoUrl && <div style={{
-          display: 'flex', gap: 6, padding: '10px 14px',
-          background: C.surface,
-          borderBottom: `1px solid ${C.border}`,
-          flexShrink: 0,
-        }}>
-          {gallery.map((g, i) => {
-            const tLit = Math.max(0.1, Math.min(0.9, tree.lit + (g.litOffset || 0)));
-            const tHue = tree.hue + (g.hueOffset || 0);
-            return (
-              <button
-                key={i}
-                onClick={() => setGalleryIdx(i)}
-                style={{
-                  width: 56, height: 42, borderRadius: 8, overflow: 'hidden',
-                  border: i === galleryIdx ? `2px solid ${C.green}` : `2px solid transparent`,
-                  padding: 0, cursor: 'pointer', flexShrink: 0,
-                  transition: 'border-color 0.15s',
-                  background: 'none',
-                }}
-              >
-                <TreeIllustration hue={tHue} sat={tree.sat} lit={tLit} id={tree.id + i * 10} />
-              </button>
-            );
-          })}
-        </div>}
+        {/* ── Compact footer: name + location (photo trees, expanded state) ── */}
+        {canExpand && (
+          <div style={{
+            flexShrink: 0,
+            overflow: 'hidden',
+            maxHeight: photoExpanded ? 90 : 0,
+            transition: `max-height 0.42s ${EASING}`,
+            background: C.surface,
+            borderTop: `1px solid ${C.border}`,
+          }}>
+            <div style={{ padding: '14px 18px 12px' }}>
+              <h2 style={{
+                fontFamily: '"DM Serif Display", serif',
+                fontSize: 20, fontWeight: 400, color: C.text,
+                lineHeight: 1.2, marginBottom: 5,
+              }}>{tree.name}</h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                {PIN}
+                <span style={{ fontSize: 13, color: C.textMid }}>{tree.location}</span>
+              </div>
+            </div>
+          </div>
+        )}
 
-        {/* Scrollable info */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '18px 18px 32px' }}>
+        {/* ── Thumbnail strip (illustration trees only) ── */}
+        {!tree.photoUrl && (
+          <div style={{
+            display: 'flex', gap: 6, padding: '10px 14px',
+            background: C.surface,
+            borderBottom: `1px solid ${C.border}`,
+            flexShrink: 0,
+          }}>
+            {gallery.map((g, i) => {
+              const tLit = Math.max(0.1, Math.min(0.9, tree.lit + (g.litOffset || 0)));
+              const tHue = tree.hue + (g.hueOffset || 0);
+              return (
+                <button
+                  key={i}
+                  onClick={() => setGalleryIdx(i)}
+                  style={{
+                    width: 56, height: 42, borderRadius: 8, overflow: 'hidden',
+                    border: i === galleryIdx ? `2px solid ${C.green}` : `2px solid transparent`,
+                    padding: 0, cursor: 'pointer', flexShrink: 0,
+                    transition: 'border-color 0.15s',
+                    background: 'none',
+                  }}
+                >
+                  <TreeIllustration hue={tHue} sat={tree.sat} lit={tLit} id={tree.id + i * 10} />
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ── Full scrollable info ── */}
+        <div style={{
+          flex: 1,
+          overflowY: photoExpanded ? 'hidden' : 'auto',
+          maxHeight: photoExpanded ? 0 : 600,
+          transition: `max-height 0.42s ${EASING}`,
+          padding: '18px 18px 32px',
+        }}>
           <h2 style={{
             fontFamily: '"DM Serif Display", serif',
             fontSize: 26, fontWeight: 400, color: C.text,
@@ -120,14 +221,10 @@ export default function TreeDetail({ tree, onClose }) {
           </p>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 16 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={C.textMid} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-              <circle cx="12" cy="9" r="2.5"/>
-            </svg>
+            {PIN}
             <span style={{ fontSize: 13, color: C.textMid }}>{tree.location}</span>
           </div>
 
-          {/* Fact pills */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 18 }}>
             {(tree.facts || []).map((f, i) => (
               <div key={i} style={{
@@ -146,7 +243,6 @@ export default function TreeDetail({ tree, onClose }) {
             {tree.description}
           </p>
 
-          {/* Bloom calendar */}
           <div style={{
             background: C.surface, border: `1px solid ${C.border}`,
             borderRadius: 14, padding: '14px 14px 12px', marginBottom: 18,
@@ -160,8 +256,7 @@ export default function TreeDetail({ tree, onClose }) {
                 return (
                   <div key={m} style={{
                     flex: 1, textAlign: 'center',
-                    padding: '5px 0',
-                    borderRadius: 6,
+                    padding: '5px 0', borderRadius: 6,
                     background: isBloom ? C.love : C.bgSubtle,
                     color: isBloom ? C.loveText : C.textLight,
                     fontSize: 8, fontWeight: isBloom ? 700 : 500,
